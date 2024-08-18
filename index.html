@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dropbox File List</title>
-    <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,36 +22,46 @@
     <div id="file-list">Cargando archivos...</div>
 
     <script>
-        // Token de acceso
+        // Token de acceso (asegúrate de que este token es válido)
         const ACCESS_TOKEN = 'sl.B7OY09lZBvZGL8OogtY5Ii_an6RSQQ-SbinRkS4h-UrEICFlqjryYUaYMUwfTQvXtnkIW7WPT1HXy3CEuqYCEBjM-GuXSj_VWyw_bnDWpOMEqerl7yl4QgKT7giWfOPV94nZ5vbeiaXd';
 
-        // Inicializar el cliente de Dropbox
-        const dbx = new Dropbox.Dropbox({ accessToken: ACCESS_TOKEN });
-
-        // Obtener y mostrar la lista de archivos
-        function listFiles() {
-            dbx.filesListFolder({ path: '' })
-                .then(response => {
-                    const files = response.result.entries;
-                    const fileListDiv = document.getElementById('file-list');
-                    fileListDiv.innerHTML = ''; // Limpiar el contenido actual
-
-                    if (files.length === 0) {
-                        fileListDiv.innerHTML = 'No se encontraron archivos.';
-                        return;
-                    }
-
-                    files.forEach(file => {
-                        const fileItem = document.createElement('div');
-                        fileItem.className = 'file-item';
-                        fileItem.textContent = file.name;
-                        fileListDiv.appendChild(fileItem);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error al obtener la lista de archivos:', error);
-                    document.getElementById('file-list').innerHTML = 'Error al cargar los archivos.';
+        // Función para obtener y mostrar la lista de archivos
+        async function listFiles() {
+            try {
+                const response = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${ACCESS_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ path: '' })
                 });
+
+                if (!response.ok) {
+                    throw new Error('Error en la solicitud: ' + response.statusText);
+                }
+
+                const data = await response.json();
+                console.log('Archivos obtenidos:', data);
+                const files = data.entries;
+                const fileListDiv = document.getElementById('file-list');
+                fileListDiv.innerHTML = ''; // Limpiar el contenido actual
+
+                if (files.length === 0) {
+                    fileListDiv.innerHTML = 'No se encontraron archivos.';
+                    return;
+                }
+
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.textContent = file.name;
+                    fileListDiv.appendChild(fileItem);
+                });
+            } catch (error) {
+                console.error('Error al obtener la lista de archivos:', error);
+                document.getElementById('file-list').innerHTML = 'Error al cargar los archivos.';
+            }
         }
 
         // Llamar a la función para listar archivos cuando se carga la página
