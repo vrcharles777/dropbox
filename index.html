@@ -3,60 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dropbox API Example</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropbox.js/8.2.1/Dropbox-sdk.min.js"></script>
+    <title>Dropbox File List</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropbox.js/8.2.2/Dropbox-sdk.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #file-list {
+            margin-top: 20px;
+        }
+        .file-item {
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Acceso a Dropbox</h1>
-    <button id="login-button">Iniciar sesión con Dropbox</button>
-    <button id="list-files-button" style="display: none;">Listar Archivos</button>
-    <ul id="file-list"></ul>
+    <h1>Dropbox File List</h1>
+    <div id="file-list">Cargando archivos...</div>
 
     <script>
-        const APP_KEY = 'm3ekxhiafcilwan';
-        const REDIRECT_URI = 'http://localhost:8000/'; // Cambia esto al URL donde sirvas tu archivo HTML
+        // Token de acceso
+        const ACCESS_TOKEN = 'sl.B7OY09lZBvZGL8OogtY5Ii_an6RSQQ-SbinRkS4h-UrEICFlqjryYUaYMUwfTQvXtnkIW7WPT1HXy3CEuqYCEBjM-GuXSj_VWyw_bnDWpOMEqerl7yl4QgKT7giWfOPV94nZ5vbeiaXd';
 
-        const dbx = new Dropbox.Dropbox({ clientId: APP_KEY });
+        // Inicializar el cliente de Dropbox
+        const dbx = new Dropbox.Dropbox({ accessToken: ACCESS_TOKEN });
 
-        document.getElementById('login-button').addEventListener('click', function() {
-            const authUrl = dbx.getAuthenticationUrl(REDIRECT_URI);
-            window.location.href = authUrl;
-        });
+        // Obtener y mostrar la lista de archivos
+        function listFiles() {
+            dbx.filesListFolder({ path: '' })
+                .then(response => {
+                    const files = response.result.entries;
+                    const fileListDiv = document.getElementById('file-list');
+                    fileListDiv.innerHTML = ''; // Limpiar el contenido actual
 
-        document.getElementById('list-files-button').addEventListener('click', function() {
-            const accessToken = localStorage.getItem('accessToken');
-            if (accessToken) {
-                const dbxWithToken = new Dropbox.Dropbox({ accessToken });
-                dbxWithToken.filesListFolder({ path: '' })
-                    .then(response => {
-                        const fileList = document.getElementById('file-list');
-                        fileList.innerHTML = '';
-                        response.entries.forEach(file => {
-                            const li = document.createElement('li');
-                            li.textContent = file.name;
-                            fileList.appendChild(li);
-                        });
-                    })
-                    .catch(error => console.error(error));
-            }
-        });
+                    if (files.length === 0) {
+                        fileListDiv.innerHTML = 'No se encontraron archivos.';
+                        return;
+                    }
 
-        function handleAuth() {
-            const queryParams = new URLSearchParams(window.location.search);
-            const authCode = queryParams.get('code');
-            if (authCode) {
-                dbx.getAccessTokenFromCode(REDIRECT_URI, authCode)
-                    .then(response => {
-                        localStorage.setItem('accessToken', response.result.access_token);
-                        document.getElementById('login-button').style.display = 'none';
-                        document.getElementById('list-files-button').style.display = 'block';
-                    })
-                    .catch(error => console.error(error));
-            }
+                    files.forEach(file => {
+                        const fileItem = document.createElement('div');
+                        fileItem.className = 'file-item';
+                        fileItem.textContent = file.name;
+                        fileListDiv.appendChild(fileItem);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error al obtener la lista de archivos:', error);
+                    document.getElementById('file-list').innerHTML = 'Error al cargar los archivos.';
+                });
         }
 
-        // Handle authentication callback
-        window.onload = handleAuth;
+        // Llamar a la función para listar archivos cuando se carga la página
+        window.onload = listFiles;
     </script>
 </body>
 </html>
